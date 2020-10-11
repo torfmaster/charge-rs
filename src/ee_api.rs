@@ -1,7 +1,9 @@
 use crate::finder::EEApiResponse;
 
-pub async fn query_ee_api() -> Result<EEApiResponse, Box<dyn std::error::Error + Send + Sync>> {
-    reqwest::get("https://api.corrently.io/core/gsi?zip=93051")
+pub async fn query_ee_api(
+    zip: &String,
+) -> Result<EEApiResponse, Box<dyn std::error::Error + Send + Sync>> {
+    reqwest::get(format!("https://api.corrently.io/core/gsi?zip={}", zip).as_str())
         .await?
         .json::<EEApiResponse>()
         .await

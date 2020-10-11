@@ -12,3 +12,4 @@ reqwest = { version = "0.10", features = ["json"] }
 tokio = { version="0.2.22", features=["full"] }
 serde = { version = "1.0.116", features = ["derive"] }
 chrono = "0.4.19"
+structopt = "0.3"
