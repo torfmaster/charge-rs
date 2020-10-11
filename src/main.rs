@@ -1,8 +1,7 @@
 use std::time::Duration;
 
-use self::finder::EEApiResponse;
-
 mod create_notification;
+mod ee_api;
 mod finder;
 mod read_battery;
 
@@ -24,11 +23,7 @@ enum Notification {
 }
 
 async fn send_notification() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let result = reqwest::get("https://api.corrently.io/core/gsi?zip=93051")
-        .await?
-        .json::<EEApiResponse>()
-        .await?;
-
+    let result = ee_api::query_ee_api().await?;
     let closest = finder::find_closest_set(&result).unwrap();
     let ee_value = closest.eevalue;
 
@@ -51,8 +46,8 @@ fn create_notification(
     status: BatteryStatus,
 ) -> Option<Notification> {
     match ee_value {
-        0...80 => match ratio {
-            0...40 => match status {
+        0..=80 => match ratio {
+            0..=40 => match status {
                 BatteryStatus::Charging | BatteryStatus::Full => None,
                 _ => Some(Notification::Plugin),
             },
