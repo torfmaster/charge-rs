@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Philipp Vollmer <briefe@kebes.de>"]
 edition = "2018"
 description = "A tool to help you use your laptop with renewable energy"
-license = "MIT or Apache 2.0"
+license = "MIT"
 
 [dependencies]
 async-std = { version= "1.6.5", features=["attributes", "unstable"] }
