@@ -4,6 +4,7 @@ mod create_notification;
 mod ee_api;
 mod finder;
 mod read_battery;
+mod thinkpad_load_state;
 
 use async_std::task;
 use read_battery::BatteryStatus;
@@ -23,6 +24,9 @@ struct Opt {
 
     #[structopt(short, long, default_value = "300")]
     check_interval_secs: usize,
+
+    #[structopt(short, long)]
+    use_thinkpad_api: bool,
 }
 
 #[cfg(test)]
@@ -33,6 +37,7 @@ impl Default for Opt {
             ee_critical: 80,
             battery_critical: 40,
             check_interval_secs: 300,
+            use_thinkpad_api: false,
         }
     }
 }
@@ -64,10 +69,25 @@ async fn send_notification(opt: &Opt) -> Result<(), Box<dyn std::error::Error + 
 
     let ratio = read_battery::get_fill_ratio().await?;
 
-    match create_notification(ee_value, ratio, status, &opt) {
+    let required_action = create_notification(ee_value, ratio, status, &opt);
+
+    match required_action {
         Some(Notification::Plugin) => create_notification::send("Plug in".into()).await?,
         Some(Notification::Plugout) => create_notification::send("Plug out".into()).await?,
         None => (),
+    }
+
+    if opt.use_thinkpad_api {
+        match required_action {
+            Some(Notification::Plugin) => {
+                println!("a {:?}", thinkpad_load_state::start_charging().await)
+            }
+            Some(Notification::Plugout) => println!(
+                "a {:?}",
+                thinkpad_load_state::stop_charging(opt.battery_critical).await
+            ),
+            None => (),
+        }
     }
 
     Ok(())
