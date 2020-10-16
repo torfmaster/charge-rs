@@ -69,23 +69,19 @@ async fn send_notification(opt: &Opt) -> Result<(), Box<dyn std::error::Error + 
 
     let ratio = read_battery::get_fill_ratio().await?;
 
-    let required_action = create_notification(ee_value, ratio, status, &opt);
-
-    match required_action {
-        Some(Notification::Plugin) => create_notification::send("Plug in".into()).await?,
-        Some(Notification::Plugout) => create_notification::send("Plug out".into()).await?,
-        None => (),
-    }
-
     if opt.use_thinkpad_api {
-        match required_action {
-            Some(Notification::Plugin) => {
-                println!("a {:?}", thinkpad_load_state::start_charging().await)
-            }
-            Some(Notification::Plugout) => println!(
+        if ee_value > opt.ee_critical {
+            println!("a {:?}", thinkpad_load_state::start_charging().await)
+        } else {
+            println!(
                 "a {:?}",
                 thinkpad_load_state::stop_charging(opt.battery_critical).await
-            ),
+            );
+        }
+    } else {
+        match create_notification(ee_value, ratio, status, &opt) {
+            Some(Notification::Plugin) => create_notification::send("Plug in".into()).await?,
+            Some(Notification::Plugout) => create_notification::send("Plug out".into()).await?,
             None => (),
         }
     }
@@ -115,6 +111,7 @@ fn create_notification(
         match status {
             BatteryStatus::Charging | BatteryStatus::Full => None,
             BatteryStatus::Discharging => Some(Notification::Plugin),
+            BatteryStatus::Unknown => None,
         }
     }
 }
